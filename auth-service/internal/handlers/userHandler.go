@@ -2,10 +2,12 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/vinit-jpl/restaurant-management/auth-service/internal/dto"
 	"github.com/vinit-jpl/restaurant-management/auth-service/internal/services"
+	"github.com/vinit-jpl/restaurant-management/auth-service/internal/utils"
 )
 
 type UserHandler struct {
@@ -19,23 +21,22 @@ func NewUserHandler(us *services.UserService) *UserHandler {
 func (uh *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	var req dto.CreateUserRequest
 
+	// Decode JSON body
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid request", http.StatusBadRequest)
+		utils.RespondError(w, http.StatusBadRequest, errors.New("invalid request body"))
 		return
 	}
 
-	// Pass context here
+	// Service call
 	user, err := uh.userService.CreateUser(r.Context(), req)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		utils.RespondError(w, http.StatusBadRequest, err)
 		return
 	}
 
-	res := dto.CreateUserResponse{
+	// Success response
+	utils.RespondSuccess(w, http.StatusCreated, "user created successfully", dto.CreateUserResponse{
 		ID:    user.ID,
 		Email: user.Email,
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(res)
+	})
 }
