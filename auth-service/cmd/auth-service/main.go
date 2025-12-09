@@ -7,9 +7,12 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/vinit-jpl/restaurant-management/auth-service/internal/config"
 	"github.com/vinit-jpl/restaurant-management/auth-service/internal/database/postgres"
+	"github.com/vinit-jpl/restaurant-management/auth-service/internal/handlers"
 	"github.com/vinit-jpl/restaurant-management/auth-service/internal/models"
+	"github.com/vinit-jpl/restaurant-management/auth-service/internal/repository"
 	"github.com/vinit-jpl/restaurant-management/auth-service/internal/routes"
 	"github.com/vinit-jpl/restaurant-management/auth-service/internal/server"
+	"github.com/vinit-jpl/restaurant-management/auth-service/internal/services"
 )
 
 func main() {
@@ -25,12 +28,20 @@ func main() {
 
 	log.Println("Database Migrated Successfully")
 
+	// -------------------------
+	// Dependency Injection root
+	// -------------------------
+	userRepo := repository.NewUserRepository(db)
+	userService := services.NewUserService(userRepo)
+	userHandler := handlers.NewUserHandler(userService)
+	// -------------------------
+
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.RequestID)
 
 	//register routes
-	r.Mount("/authservice/api", routes.WrapRoutes())
+	r.Mount("/authservice/api", routes.WrapRoutes(userHandler))
 	// Initialize and start the server
 
 	srv := server.NewServer(cfg.Port, r)
