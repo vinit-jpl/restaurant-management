@@ -16,5 +16,5 @@ type ApiResponse struct {
 	Status  string      `json:"status"`
 	Code    int         `json:"code"`
 	Message string      `json:"message"`
-	Data    interface{} `json:"data,omitempty"`
+	Data    interface{} `json:"data,omitempty"` // omitempty applies only to JSON encoding
 }

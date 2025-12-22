@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
 
 	"github.com/vinit-jpl/restaurant-management/auth-service/internal/dto"
@@ -19,24 +18,31 @@ func NewUserHandler(us *services.UserService) *UserHandler {
 }
 
 func (uh *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
+
 	var req dto.CreateUserRequest
 
-	// Decode JSON body
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.RespondError(w, http.StatusBadRequest, errors.New("invalid request body"))
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		utils.RespondError(w, http.StatusBadRequest, "invalid request payload", err)
 		return
 	}
 
-	// Service call
 	user, err := uh.userService.CreateUser(r.Context(), req)
 	if err != nil {
-		utils.RespondError(w, http.StatusBadRequest, err)
+		utils.RespondError(w, http.StatusInternalServerError, "internal server error", err)
 		return
 	}
 
-	// Success response
-	utils.RespondSuccess(w, http.StatusCreated, "user created successfully", dto.CreateUserResponse{
+	// send only safe fields
+	respData := dto.CreateUserResponse{
 		ID:    user.ID,
 		Email: user.Email,
-	})
+	}
+
+	utils.RespondSuccess(
+		w,
+		http.StatusCreated,
+		"user registered",
+		respData,
+	)
 }
